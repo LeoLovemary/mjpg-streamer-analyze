@@ -1,26 +1,34 @@
 #!/bin/sh
 
-#/******************************************************************************
+#*******************************************************************************
 #                                                                              #
 #      MJPG-streamer allows to stream JPG frames from an input-plugin          #
 #      to several output plugins                                               #
+# 【翻译：MJPG-streamer允许将JPG帧从输入插件流到多个输出插件】                     #      
 #                                                                              #
 #      Copyright (C) 2007 Tom Stöveken                                         #
+# 【翻译：版权所有(C) 2007汤姆斯托维肯】                                          #           
 #                                                                              #
 # This program is free software; you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
 # the Free Software Foundation; version 2 of the License.                      #
+# 【翻译：这个程序是自由软件;您可以根据自由软件基金会发布的GNU通用公共               #
+#  许可证条款重新发布和/或修改它;许可的版本2。】                                   # 
 #                                                                              #
 # This program is distributed in the hope that it will be useful,              #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of               #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
 # GNU General Public License for more details.                                 #
-#                                                                              #
+#【翻译：本程序的发布是希望它将是有用的，但没有任何保证;甚至没有隐含的适             #   
+#销性或适合某一特定用途的保证。有关更多细节，请参阅GNU通用公共许可证。】             #
+#                                                                              #         
 # You should have received a copy of the GNU General Public License            #
 # along with this program; if not, write to the Free Software                  #
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA    #
-#                                                                              #
-#******************************************************************************/
+#  【翻译：你应该已经收到一份GNU通用公共许可证的副本连同这个程序;如果没              #
+#有，写信给自由软件基金会，Inc.， 59 Temple Place, Suite 330, Boston,             #
+#MA 02111-1307 USA】                                                            #
+#*******************************************************************************/
 
 ## This example shows how to invoke mjpg-streamer from the command line
 

@@ -2,42 +2,50 @@
 #                                                                              #
 #      MJPG-streamer allows to stream JPG frames from an input-plugin          #
 #      to several output plugins                                               #
+# 【翻译：MJPG-streamer允许将JPG帧从输入插件流到多个输出插件】                     #      
 #                                                                              #
 #      Copyright (C) 2007 Tom Stöveken                                         #
+# 【翻译：版权所有(C) 2007汤姆斯托维肯】                                          #           
 #                                                                              #
 # This program is free software; you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
 # the Free Software Foundation; version 2 of the License.                      #
+# 【翻译：这个程序是自由软件;您可以根据自由软件基金会发布的GNU通用公共               #
+#  许可证条款重新发布和/或修改它;许可的版本2。】                                   # 
 #                                                                              #
 # This program is distributed in the hope that it will be useful,              #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of               #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
 # GNU General Public License for more details.                                 #
-#                                                                              #
+#【翻译：本程序的发布是希望它将是有用的，但没有任何保证;甚至没有隐含的适             #   
+#销性或适合某一特定用途的保证。有关更多细节，请参阅GNU通用公共许可证。】             #
+#                                                                              #         
 # You should have received a copy of the GNU General Public License            #
 # along with this program; if not, write to the Free Software                  #
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA    #
-#                                                                              #
+#  【翻译：你应该已经收到一份GNU通用公共许可证的副本连同这个程序;如果没              #
+#有，写信给自由软件基金会，Inc.， 59 Temple Place, Suite 330, Boston,             #
+#MA 02111-1307 USA】                                                            #
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <getopt.h>
-#include <pthread.h>
-#include <dlfcn.h>
-#include <fcntl.h>
-#include <syslog.h>
+#include <stdio.h>   //标准输入输出头文件(定义了三个变量类型、一些宏和各种函数来执行输入和输出。)
+#include <stdlib.h>   //标准库头文件 (stdlib.h里面定义了C，C++语言的五种变量类型、一些宏和通用工具函数。)
+#include <unistd.h>  //unistd.h是linux/unix的系统调用，包含了许多 U N I X系统服务的函数原型,例如 r e a d， w r i t e和getpid函数。
+#include <string.h>  //string .h 头文件定义了一个变量类型、一个宏和各种操作字符数组的函数。
+#include <sys/ioctl.h>   // ioctl是设备驱动程序中对设备的I/O通道进行管理的函数。所谓对I/O通道进行管理，就是对设备的一些特性进行控制，例如串口的传输波特率、马达的转速等等。
+#include <errno.h>      //该头文件定义了通过错误码来回报错误资讯的宏。errno 宏定义为一个 int 型态的左值, 包含任何函式使用errno功能所产生的上一个错误码。
+#include <signal.h>     //signal.h是C标准函数库中的信号处理部分， 定义了程序执行时如何处理不同的信号。信号用作进程间通信， 报告异常行为（如除零）、用户的一些按键组合（如同时按下Ctrl与C键，产生信号SIGINT）。
+#include <sys/socket.h>     //socket编程涉及到头文件sys/socket.h 和sys/types.h
+#include <arpa/inet.h>     //里面包含了一些网络编中需要的头文件,还有一些结构体 
+#include <sys/types.h>      //socket编程涉及到头文件sys/socket.h 和sys/types.h
+#include <sys/stat.h>       //stat函数可以返回一个结构，里面包括文件的全部属性(sys/stat.h头文件，轻松获取文件属性)
+#include <getopt.h>         //getopt是一个专门设计来减轻命令行处理负担的库函数，它可以在全局结构中记录命令参数，以便随后随时在整个程序中使用，即getopt被用来解析命令行选项参数，就不用自己写代码处理argv了。其中比较重要的函数是getopt()和getopt_long()。
+#include <pthread.h>        //Linux系统下的多线程遵循POSIX线程接口，称为pthread。编写Linux下的多线程程序，需要使用头文件pthread.h，连接时需要使用库libpthread.a。
+#include <dlfcn.h>          //dlfcn.h是一个头文件，调用动态链接库用的
+#include <fcntl.h>          //fcntl.h，是unix标准中通用的头文件，其中包含的相关函数有 open，fcntl，shutdown，unlink，fclose等！
+#include <syslog.h>         //Linux C中提供一套系统日记写入接口，包括三个函数：openlog，syslog和closelog。
 #include <linux/types.h>          /* for videodev2.h */
-#include <linux/videodev2.h>
+#include <linux/videodev2.h>    //V4L2 的相关定义包含在头文件
 
 #include "utils.h"
 #include "mjpg_streamer.h"
