@@ -36,14 +36,14 @@
 #include <fcntl.h>
 #include <wait.h>
 #include <time.h>
-#include <limits.h>
+#include <limits.h>  //limits.h专门用于检测整型数据数据类型的表达值范围。
 #include <linux/stat.h>
 #include <sys/stat.h>
 
 #include "utils.h"
 
 /******************************************************************************
-Description.:
+Description.: 创建守护进程  【让程序后台运行】
 Input Value.:
 Return Value:
 ******************************************************************************/
@@ -51,20 +51,26 @@ void daemon_mode(void)
 {
     int fr = 0;
 
-    fr = fork();
+    fr = fork();   //利用fork()创建进程//fork（）函数通过系统调用创建一个与原来进程几乎完全相同的进程,相当于克隆一个进程 
     if(fr < 0) {
         fprintf(stderr, "fork() failed\n");
         exit(1);
     }
-    if(fr > 0) {
-        exit(0);
-    }
 
+    if(fr > 0) {
+        exit(0);   //父进程退出，使子进程成为孤儿进程
+    }
+/*当进程是会话的领头进程时setsid()调用失败并返回（-1）。setsid()调用成功后，返回新的会话的ID，调用setsid函数的进程成为新的会话的
+领头进程，并与其父进程的会话组和进程组脱离。由于会话对控制终端的独占性，进程同时与控制终端脱离。
+*/
+//开启新的会话
     if(setsid() < 0) {
         fprintf(stderr, "setsid() failed\n");
         exit(1);
     }
-
+/*在调用了fork函数时，子进程全盘拷贝了父进程的会话期、进程组、控制终端等。虽然父进程退出了，但会话期、进程组、控制终端等并没有改变。
+  因此，这还不是真正意义上的独立开来，而setsid函数能够使进程完全独立出来，从而摆脱其他进程的控制。
+*/
     fr = fork();
     if(fr < 0) {
         fprintf(stderr, "fork() failed\n");
@@ -74,21 +80,31 @@ void daemon_mode(void)
         fprintf(stderr, "forked to background (%d)\n", fr);
         exit(0);
     }
+/*
+就是设置允许当前进程创建文件或者目录最大可操作的权限，比如这里设置为0，
+它的意思就是0取反再创建文件时权限相与，也就是：(~0) & mode 等于八进制的值0777 & mode了，
+这样就是给后面的代码调用函数mkdir给出最大的权限，避免了创建目录或文件的权限不确定性。
+*/
+    umask(0);  //就是设置文件权限。把文件权限掩码设置为0，可以大大增强该守护进程的灵活性。
 
-    umask(0);
-
-    fr = chdir("/");
+    fr = chdir("/");  //改变当前工作目录
     if(fr != 0) {
         fprintf(stderr, "chdir(/) failed\n");
         exit(0);
     }
-
+/*
+在上面的第三步之后，守护进程已经与所属的控制终端失去了联系。因此从终端输入的字符
+不可能达到守护进程，守护进程中用常规方法（如printf）输出的字符也不可能在终端上显
+示出来。所以，文件描述符为0、1和2 的3个文件（常说的输入、输出和报错）已经失去
+了存在的价值，也应被关闭。
+*/
     close(0);
     close(1);
     close(2);
 
-    open("/dev/null", O_RDWR);
+    open("/dev/null", O_RDWR);  //创建空设备//写入/dev/null的东西会被系统丢掉 
 
+  //描述符置0 
     fr = dup(0);
     fr = dup(0);
 }

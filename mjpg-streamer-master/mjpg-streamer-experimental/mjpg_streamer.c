@@ -51,13 +51,14 @@
 #include "mjpg_streamer.h"
 
 /* globals */
-static globals global;
+static globals global;     //创建全局结构体变量
 
-/******************************************************************************
-Description.: Display a help message
-Input Value.: argv[0] is the program name and the parameter progname
-Return Value: -
-******************************************************************************/
+/***********************************************************************************************************************
+Description.: Display a help message  //描述。:显示帮助信息
+Input Value.: argv[0] is the program name and the parameter progname  //输入值。: argv[0]是程序名和参数progname
+Return Value: -         //返回值:-
+***********************************************************************************************************************/
+
 static void help(char *progname)
 {
     fprintf(stderr, "-----------------------------------------------------------------------\n");
@@ -90,24 +91,29 @@ static void help(char *progname)
     fprintf(stderr, "-----------------------------------------------------------------------\n");
 }
 
-/******************************************************************************
+/**************************************************************************************************************************************
 Description.: pressing CTRL+C sends signals to this process instead of just
               killing it plugins can tidily shutdown and free allocated
               resources. The function prototype is defined by the system,
               because it is a callback function.
-Input Value.: sig tells us which signal was received
+ //该函数用于结束程序            
+ //描述。:按CTRL+C向这个进程发送信号，而不仅仅是直接杀死插件，而可以整齐地关闭和释放分配的资源。函数原型由系统定义，因为它是一个回调函数。       
+
+Input Value.: sig tells us which signal was received   //输入值。: sig告诉我们收到了哪个信号
 Return Value: -
-******************************************************************************/
+**************************************************************************************************************************************/
 static void signal_handler(int sig)
 {
     int i;
 
     /* signal "stop" to threads */
+    /*向线程发出“停止”信号*/
     LOG("setting signal to stop\n");
     global.stop = 1;
-    usleep(1000 * 1000);
+    usleep(1000 * 1000);  //1s延迟
 
     /* clean up threads */
+    /*清理线程*/
     LOG("force cancellation of threads and cleanup resources\n");
     for(i = 0; i < global.incnt; i++) {
         global.in[i].stop(i);
@@ -127,9 +133,10 @@ static void signal_handler(int sig)
                 free(global.out[i].param.argv[j]);
         }*/
     }
-    usleep(1000 * 1000);
+    usleep(1000 * 1000); //1s延迟
 
     /* close handles of input plugins */
+    /*关闭输入插件的句柄*/
     for(i = 0; i < global.incnt; i++) {
         dlclose(global.in[i].handle);
     }
@@ -162,6 +169,14 @@ static void signal_handler(int sig)
     return;
 }
 
+/******************************************************************************
+Description.:  split_parameters用于提取命令行参数
+Input Value.: 
+    *parameter_string->待处理参数字符串
+    *argc->参数个数
+    **argv->参数数组
+Return Value:
+*****************************************************************************/
 static int split_parameters(char *parameter_string, int *argc, char **argv)
 {
     int count = 1;
@@ -169,16 +184,20 @@ static int split_parameters(char *parameter_string, int *argc, char **argv)
     if(parameter_string != NULL && strlen(parameter_string) != 0) {
         char *arg = NULL, *saveptr = NULL, *token = NULL;
 
-        arg = strdup(parameter_string);
-
+        arg = strdup(parameter_string); //strdup返回值：返回一个指针,指向为复制字符串分配的空间;如果分配空间失败,则返回NULL值。
+        //判断是否存在参数
         if(strchr(arg, ' ') != NULL) {
-            token = strtok_r(arg, " ", &saveptr);
+            //strtok_r()函数用于分割字符串。strtok_r是linux平台下的strtok函数的线程安全版。
+            token = strtok_r(arg, " ", &saveptr); //第一次调用strtok_r时，str参数必须指向待提取的字符串，saveptr参数的值可以忽略。
             if(token != NULL) {
                 argv[count] = strdup(token);
                 count++;
+                //连续调用时，str赋值为NULL，saveptr为上次调用后返回的值，不要修改。
+                //提取所有参数
                 while((token = strtok_r(NULL, " ", &saveptr)) != NULL) {
                     argv[count] = strdup(token);
                     count++;
+                    //如果参数个数超过限定数则报错
                     if(count >= MAX_PLUGIN_ARGUMENTS) {
                         IPRINT("ERROR: too many arguments to input plugin\n");
                         return 0;
@@ -186,16 +205,16 @@ static int split_parameters(char *parameter_string, int *argc, char **argv)
                 }
             }
         }
-        free(arg);
+        free(arg); //释放内存
     }
     *argc = count;
     return 1;
 }
 
 /******************************************************************************
-Description.:
-Input Value.:
-Return Value:
+Description.: 主程序
+Input Value.: int argc, char *argv[]
+Return Value: return -
 ******************************************************************************/
 int main(int argc, char *argv[])
 {
@@ -205,13 +224,15 @@ int main(int argc, char *argv[])
     int daemon = 0, i, j;
     size_t tmp = 0;
 
-    output[0] = "output_http.so --port 8080";
-    global.outcnt = 0;
-    global.incnt = 0;
+    output[0] = "output_http.so --port 8080";   //创建一个输出插件
+    global.outcnt = 0;  //输出插件数置0
+    global.incnt = 0;   //输入插件数置0
 
     /* parameter parsing */
+    /*参数传递*/
     while(1) {
         int c = 0;
+        /*long_options 结构对象创建*/
         static struct option long_options[] = {
             {"help", no_argument, NULL, 'h'},
             {"input", required_argument, NULL, 'i'},
@@ -221,21 +242,22 @@ int main(int argc, char *argv[])
             {NULL, 0, NULL, 0}
         };
 
-        c = getopt_long(argc, argv, "hi:o:vb", long_options, NULL);
+        c = getopt_long(argc, argv, "hi:o:vb", long_options, NULL);  //获取参数（自动指向下一个参数）
 
         /* no more options to parse */
+        /*无参数，switch不执行*/
         if(c == -1) break;
-
+        /*根据参数分类处理*/
         switch(c) {
-        case 'i':
-            input[global.incnt++] = strdup(optarg);
+        case 'i':  //添加输入插件
+            input[global.incnt++] = strdup(optarg);   
             break;
 
-        case 'o':
+        case 'o': //添加输出插件
             output[global.outcnt++] = strdup(optarg);
             break;
 
-        case 'v':
+        case 'v'://打印版本号
             printf("MJPG Streamer Version: %s\n",
 #ifdef GIT_HASH
             GIT_HASH
@@ -246,14 +268,14 @@ int main(int argc, char *argv[])
             return 0;
             break;
 
-        case 'b':
+        case 'b': 
             daemon = 1;
             break;
 
         case 'h': /* fall through */
         default:
-            help(argv[0]);
-            exit(EXIT_FAILURE);
+            help(argv[0]); //调用帮助程序
+            exit(EXIT_FAILURE);   //结束程序
         }
     }
 
