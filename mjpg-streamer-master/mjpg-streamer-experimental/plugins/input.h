@@ -50,15 +50,17 @@ struct _input_format {
 };
 
 /* structure to store variables/functions for input plugin */
+/*结构，用于存储输入插件的变量/函数*/
 typedef struct _input input;
 struct _input {
     char *plugin;
     char *name;
     void *handle;
 
-    input_parameter param; // this holds the command line arguments
+    input_parameter param; // this holds the command line arguments    //这包含命令行参数
 
-    // input plugin parameters
+    // input plugin parameters   
+    //输入插件参数
     struct _control *in_parameters;
     int parametercount;
 
@@ -66,6 +68,7 @@ struct _input {
     struct v4l2_jpegcompression jpegcomp;
 
     /* signal fresh frames */
+    /*新的帧信号*/
     pthread_mutex_t db;
     pthread_cond_t  db_update;
 

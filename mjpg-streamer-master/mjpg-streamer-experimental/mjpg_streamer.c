@@ -96,7 +96,7 @@ Description.: pressing CTRL+C sends signals to this process instead of just
               killing it plugins can tidily shutdown and free allocated
               resources. The function prototype is defined by the system,
               because it is a callback function.
- //该函数用于结束程序            
+ //该函数用于结束程序 （释放资源。）           
  //描述。:按CTRL+C向这个进程发送信号，而不仅仅是直接杀死插件，而可以整齐地关闭和释放分配的资源。函数原型由系统定义，因为它是一个回调函数。       
 
 Input Value.: sig tells us which signal was received   //输入值。: sig告诉我们收到了哪个信号
@@ -232,10 +232,10 @@ int main(int argc, char *argv[])
     /*参数传递*/
     while(1) {
         int c = 0;
-        /*long_options 结构对象创建*/
+        /*创建option结构的数组*/
         static struct option long_options[] = {
-            {"help", no_argument, NULL, 'h'},
-            {"input", required_argument, NULL, 'i'},
+            {"help", no_argument, NULL, 'h'}, //无需参数，指定getopt_long返回值‘h’
+            {"input", required_argument, NULL, 'i'},  //需要参数，指定getopt_long返回值‘i’
             {"output", required_argument, NULL, 'o'},
             {"version", no_argument, NULL, 'v'},
             {"background", no_argument, NULL, 'b'},
@@ -245,8 +245,8 @@ int main(int argc, char *argv[])
         c = getopt_long(argc, argv, "hi:o:vb", long_options, NULL);  //获取参数（自动指向下一个参数）
 
         /* no more options to parse */
-        /*无参数，switch不执行*/
-        if(c == -1) break;
+        /*c == -1 表示无参数或解析错误，则结束while循环*/
+        if(c == -1) break;  
         /*根据参数分类处理*/
         switch(c) {
         case 'i':  //添加输入插件
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
             break;
 
         case 'b': 
-            daemon = 1;
+            daemon = 1;  //打开创建守护进程标志
             break;
 
         case 'h': /* fall through */
@@ -284,15 +284,31 @@ int main(int argc, char *argv[])
     syslog(LOG_INFO, "starting application");
 
     /* fork to the background */
+    /*判断是否创建守护进程*/
     if(daemon) {
         LOG("enabling daemon mode");
-        daemon_mode();
+        daemon_mode(); //进入守护进程模式
     }
 
-    /* ignore SIGPIPE (send by OS if transmitting to closed TCP sockets) */
-    signal(SIGPIPE, SIG_IGN);
+
+    /*
+    signal（参数1，参数2）；
+    参数1：我们要进行处理的信号。系统的信号我们可以再终端键入 kill -l查看(共64个)。其实这些信号时系统定义的宏。
+    参数2：我们处理的方式（是系统默认还是忽略还是捕获）。
+    一般有3中方式进行操作。
+    */
+
+   /*signal(SIGPIPE, SIG_IGN)函数说明**************************************************************************
+    /* ignore SIGPIPE (send by OS if transmitting to closed TCP sockets)
+   忽略SIGPIPE(如果传输到关闭的TCP套接字，则由OS发送)
+   连接建立，若某一端关闭连接，而另一端仍然向它写数据，第一次写数据后会收到RST响应，此后再写数据，
+   内核将向进程发出SIGPIPE信号，通知进程此连接已经断开。而SIGPIPE信号的默认处理是终止程序,所以下面忽略此信号。
+   */
+    signal(SIGPIPE, SIG_IGN); //忽略SIGPIPE信号,避免程序异常终止
 
     /* register signal handler for <CTRL>+C in order to clean up */
+    /*为<CTRL>+C注册信号处理程序，以便进行清理*/
+    /*SIGINT：<CTRL>+C信号   signal_handler:回调函数*/
     if(signal(SIGINT, signal_handler) == SIG_ERR) {
         LOG("could not register signal handler\n");
         closelog();
@@ -310,25 +326,31 @@ int main(int argc, char *argv[])
 #endif
 
     /* check if at least one output plugin was selected */
+    /*检查是否至少选择了一个输出插件*/
     if(global.outcnt == 0) {
-        /* no? Then use the default plugin instead */
+        /* 没有?然后使用默认插件*/
+        /**/
         global.outcnt = 1;
     }
 
     /* open input plugin */
+    /*打开输入插件*/
     for(i = 0; i < global.incnt; i++) {
         /* this mutex and the conditional variable are used to synchronize access to the global picture buffer */
+        /*这个互斥量和条件变量用于同步对全局图片缓冲区的访问*/
+        /*   &global.in[i].db  取得返回的当前输入插件对应的互斥量（初始化并且获取输入插件对应互斥量）*/
         if(pthread_mutex_init(&global.in[i].db, NULL) != 0) {
             LOG("could not initialize mutex variable\n");
             closelog();
             exit(EXIT_FAILURE);
         }
+        /*函数pthread_cond_init（）被用来初始化一个条件变量。*/
         if(pthread_cond_init(&global.in[i].db_update, NULL) != 0) {
             LOG("could not initialize condition variable\n");
             closelog();
             exit(EXIT_FAILURE);
         }
-
+      
         tmp = (size_t)(strchr(input[i], ' ') - input[i]);
         global.in[i].stop      = 0;
         global.in[i].context   = NULL;
